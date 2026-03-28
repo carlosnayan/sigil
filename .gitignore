@@ -1,0 +1,24 @@
+# Binário
+vault
+bin/
+*.exe
+dist/
+
+# Dados locais e secrets
+.vault/
+*.gpg
+.env
+
+# Go
+vendor/
+
+# OS / Editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
