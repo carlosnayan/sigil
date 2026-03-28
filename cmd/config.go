@@ -8,6 +8,7 @@ import (
 
 	"github.com/carlos/sigil/internal/config"
 	"github.com/carlos/sigil/internal/ui"
+	"github.com/carlos/sigil/internal/vaultstore"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
@@ -16,7 +17,7 @@ var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Open the interactive vault menu",
 	Long: `Reads the secret from ~/.sigil/vault.yaml and opens an interactive menu
-(arrow keys) to manage configs, import/export, rekey, and diagnostics.`,
+(arrow keys) to add configs, manage configs, and rekey.`,
 	RunE: runConfig,
 }
 
@@ -66,7 +67,11 @@ func runConfig(cmd *cobra.Command, _ []string) error {
 
 	encryptionKey := cfg.Secret
 
+	ui.BeginMenuSession()
+	defer ui.EndMenuSession()
+
 	for {
+		ui.PrepareMenuScreen()
 		idx, _, err := configVaultMenu()
 		if err != nil {
 			if errors.Is(err, promptui.ErrInterrupt) || errors.Is(err, promptui.ErrEOF) {
@@ -78,12 +83,22 @@ func runConfig(cmd *cobra.Command, _ []string) error {
 
 		switch idx {
 		case 0:
+			vaultsDir := vaultstore.Dir(sigilHome)
+			if err := os.MkdirAll(vaultsDir, 0o700); err != nil {
+				return fmt.Errorf("sigil: vaults directory: %w", err)
+			}
+			if err := addNewVault(vaultsDir, encryptionKey); err != nil {
+				if !isPromptAbort(err) {
+					ui.Error(err.Error())
+				}
+			}
+		case 1:
 			if err := runManageSecrets(sigilHome, encryptionKey); err != nil {
 				return err
 			}
-		case 1, 2, 3, 4:
+		case 2:
 			menuStub(ui.VaultMenuItems[idx], encryptionKey)
-		case 5:
+		case 3:
 			ui.Success("Session closed.")
 			return nil
 		default:

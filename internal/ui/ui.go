@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"unicode/utf8"
 
 	"github.com/fatih/color"
@@ -18,16 +19,80 @@ var (
 	errColor     = color.New(color.FgRed).SprintFunc()
 )
 
+type pendingNotice struct {
+	warn bool
+	text string
+}
+
+var (
+	menuMu           sync.Mutex
+	menuSessionDepth int
+	pendingNotices   []pendingNotice
+)
+
+// BeginMenuSession marks interactive menu mode so Warn/Error are queued for replay
+// after the next PrepareMenuScreen (after ClearScreen). Nestable (e.g. config → manage configs).
+func BeginMenuSession() {
+	menuMu.Lock()
+	menuSessionDepth++
+	menuMu.Unlock()
+}
+
+// EndMenuSession ends one level of menu session; when depth reaches zero, pending notices are dropped.
+func EndMenuSession() {
+	menuMu.Lock()
+	menuSessionDepth--
+	if menuSessionDepth < 0 {
+		menuSessionDepth = 0
+	}
+	if menuSessionDepth == 0 {
+		pendingNotices = nil
+	}
+	menuMu.Unlock()
+}
+
+func queueNotice(warn bool, text string) {
+	menuMu.Lock()
+	if menuSessionDepth > 0 {
+		pendingNotices = append(pendingNotices, pendingNotice{warn: warn, text: text})
+	}
+	menuMu.Unlock()
+}
+
 func Success(msg string) {
 	fmt.Fprintln(os.Stdout, successColor("✓ "+msg))
 }
 
 func Warn(msg string) {
 	fmt.Fprintln(os.Stderr, warnColor("! "+msg))
+	queueNotice(true, msg)
 }
 
 func Error(msg string) {
 	fmt.Fprintln(os.Stderr, errColor("✗ "+msg))
+	queueNotice(false, msg)
+}
+
+// ClearScreen moves the cursor home and clears the visible terminal buffer.
+func ClearScreen() {
+	fmt.Fprint(os.Stdout, "\033[H\033[2J")
+}
+
+// PrepareMenuScreen clears the terminal and reprints Warn/Error lines queued since the last call
+// (so messages are not lost when ClearScreen runs between menu iterations).
+func PrepareMenuScreen() {
+	ClearScreen()
+	menuMu.Lock()
+	q := pendingNotices
+	pendingNotices = nil
+	menuMu.Unlock()
+	for _, n := range q {
+		if n.warn {
+			fmt.Fprintln(os.Stderr, warnColor("! "+n.text))
+		} else {
+			fmt.Fprintln(os.Stderr, errColor("✗ "+n.text))
+		}
+	}
 }
 
 func PromptPassword(label string) (string, error) {
@@ -71,12 +136,13 @@ func PromptSelect(label string, items []string) (int, string, error) {
 	return p.Run()
 }
 
+// BackItemLabel is the standard label for returning to the previous menu.
+const BackItemLabel = "← Back"
+
 var VaultMenuItems = []string{
+	"Add new config",
 	"Manage configs",
-	"Import .env file",
-	"Export .env file",
 	"Rekey / Change secret",
-	"Doctor / Status",
 	"Exit",
 }
 
@@ -90,7 +156,7 @@ func promptSelectItems(items []string) *promptui.Select {
 			Label:    "{{if false}}{{end}}",
 			Active:   "❯ {{ . | cyan }}",
 			Inactive: "  {{ . }}",
-			Selected: "❯ {{ . | green }}",
+			Selected: " ",
 		},
 	}
 }

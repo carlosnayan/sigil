@@ -78,7 +78,7 @@ func TestRunConfig_menuExit(t *testing.T) {
 
 	oldM := configVaultMenu
 	configVaultMenu = func() (int, string, error) {
-		return 5, ui.VaultMenuItems[5], nil
+		return 3, ui.VaultMenuItems[3], nil
 	}
 	t.Cleanup(func() { configVaultMenu = oldM })
 

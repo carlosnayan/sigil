@@ -22,16 +22,17 @@ func runManageSecrets(sigilHome, encryptionKey string) error {
 	}
 
 	for {
+		ui.PrepareMenuScreen()
 		basenames, err := vaultstore.ListEncBasenames(vaultsDir)
 		if err != nil {
 			return fmt.Errorf("sigil: list vaults: %w", err)
 		}
 
-		items := []string{"Add new config"}
+		items := make([]string, 0, len(basenames)+1)
 		for _, b := range basenames {
 			items = append(items, vaultstore.Stem(b))
 		}
-		items = append(items, "Back")
+		items = append(items, ui.BackItemLabel)
 
 		idx, _, err := ui.SelectList("Manage configs", items)
 		if err != nil {
@@ -45,14 +46,8 @@ func runManageSecrets(sigilHome, encryptionKey string) error {
 		switch {
 		case idx == backIdx:
 			return nil
-		case idx == 0:
-			if err := addNewVault(vaultsDir, encryptionKey); err != nil {
-				if !isPromptAbort(err) {
-					ui.Error(err.Error())
-				}
-			}
 		default:
-			basename := basenames[idx-1]
+			basename := basenames[idx]
 			if err := vaultSubmenu(vaultsDir, basename, encryptionKey); err != nil {
 				if errors.Is(err, promptui.ErrInterrupt) || errors.Is(err, promptui.ErrEOF) {
 					return nil
@@ -129,13 +124,14 @@ func vaultSubmenu(vaultsDir, basename, encryptionKey string) error {
 	title := vaultstore.Stem(basename)
 
 	for {
-		items := []string{"Edit", "Delete", "Back"}
+		ui.PrepareMenuScreen()
+		items := []string{"Edit", "Delete", ui.BackItemLabel}
 		idx, _, err := ui.SelectList(title, items)
 		if err != nil {
 			return err
 		}
 		switch idx {
-		case 2:
+		case 2: // Back
 			return nil
 		case 0:
 			if err := editVaultFile(path, encryptionKey); err != nil {
