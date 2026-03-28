@@ -16,22 +16,18 @@ var (
 	errColor     = color.New(color.FgRed).SprintFunc()
 )
 
-// Success imprime mensagem de sucesso.
 func Success(msg string) {
 	fmt.Fprintln(os.Stdout, successColor("✓ "+msg))
 }
 
-// Warn imprime aviso.
 func Warn(msg string) {
 	fmt.Fprintln(os.Stderr, warnColor("! "+msg))
 }
 
-// Error imprime erro formatado.
 func Error(msg string) {
 	fmt.Fprintln(os.Stderr, errColor("✗ "+msg))
 }
 
-// PromptPassword solicita senha sem eco (stub interativo usando promptui).
 func PromptPassword(label string) (string, error) {
 	p := promptui.Prompt{
 		Label: label,
@@ -42,7 +38,6 @@ func PromptPassword(label string) (string, error) {
 
 const maxPasswordConfirmAttempts = 3
 
-// PromptConfirmPassword pede a senha duas vezes; repete até maxPasswordConfirmAttempts se não coincidirem ou estiverem vazias.
 func PromptConfirmPassword(label, confirmLabel string) (string, error) {
 	for attempt := 0; attempt < maxPasswordConfirmAttempts; attempt++ {
 		p1, err := PromptPassword(label)
@@ -66,7 +61,6 @@ func PromptConfirmPassword(label, confirmLabel string) (string, error) {
 	return "", errors.New("too many failed password confirmation attempts")
 }
 
-// PromptSelect mostra um menu e devolve índice e valor escolhidos.
 func PromptSelect(label string, items []string) (int, string, error) {
 	p := promptui.Select{
 		Label: label,
@@ -75,7 +69,40 @@ func PromptSelect(label string, items []string) (int, string, error) {
 	return p.Run()
 }
 
-// Confirm pergunta Y/n (ou Enter para o default). defaultYes define o comportamento quando a resposta está vazia.
+var VaultMenuItems = []string{
+	"Manage secrets",
+	"Import .env file",
+	"Export .env file",
+	"Rekey / Change passphrase",
+	"Doctor / Status",
+	"Exit",
+}
+
+func VaultMenu(unlocked bool) (int, string, error) {
+	status := "🔒 Locked"
+	if unlocked {
+		status = "🔓 Unlocked"
+	}
+	bold := color.New(color.Bold)
+	fmt.Fprintln(os.Stdout)
+	fmt.Fprintln(os.Stdout, bold.Sprint("SIGIL — Vault Menu"))
+	fmt.Fprintf(os.Stdout, "Status: %s\n", status)
+
+	sel := promptui.Select{
+		Label:    "",
+		Items:    VaultMenuItems,
+		Size:     len(VaultMenuItems),
+		HideHelp: true,
+		Templates: &promptui.SelectTemplates{
+			Label:    "{{if false}}{{end}}",
+			Active:   "❯ {{ . | cyan }}",
+			Inactive: "  {{ . }}",
+			Selected: "❯ {{ . | green }}",
+		},
+	}
+	return sel.Run()
+}
+
 func Confirm(label string, defaultYes bool) (bool, error) {
 	hint := "[Y/n]"
 	if !defaultYes {

@@ -59,7 +59,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	password, err := ui.PromptConfirmPassword("Enter vault password:", "Confirm vault password:")
+	password, err := initPromptConfirmPassword("Enter vault password:", "Confirm vault password:")
 	if err != nil {
 		return err
 	}
@@ -73,14 +73,14 @@ func runInit(cmd *cobra.Command, args []string) error {
 	fmt.Println(autoSecret)
 	fmt.Println()
 
-	useAuto, err := ui.Confirm("Use this generated secret?", true)
+	useAuto, err := initConfirm("Use this generated secret?", true)
 	if err != nil {
 		return err
 	}
 
 	chosen := autoSecret
 	if !useAuto {
-		s, err := ui.PromptPassword("Enter your secret")
+		s, err := initPromptPassword("Enter your secret")
 		if err != nil {
 			return err
 		}
@@ -140,3 +140,9 @@ func runInit(cmd *cobra.Command, args []string) error {
 	ui.Success("Sigil initialized successfully.")
 	return nil
 }
+
+var (
+	initPromptConfirmPassword = ui.PromptConfirmPassword
+	initConfirm               = ui.Confirm
+	initPromptPassword        = ui.PromptPassword
+)

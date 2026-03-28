@@ -1,4 +1,3 @@
-// Package crypto provides symmetric encryption for Sigil: AES-256-GCM with keys derived via scrypt.
 package crypto
 
 import (
@@ -12,7 +11,6 @@ import (
 )
 
 const (
-	// Scrypt parameters (memory-hard key derivation).
 	scryptN  = 32768
 	scryptR  = 8
 	scryptP  = 1
@@ -22,7 +20,6 @@ const (
 	wireV1   = byte(1)
 )
 
-// ErrDecrypt is returned when decryption fails (wrong key or corrupt data).
 var ErrDecrypt = errors.New("crypto: decryption failed")
 
 func deriveKey(password []byte, salt []byte) ([]byte, error) {
@@ -88,8 +85,6 @@ func open(password []byte, blob []byte) ([]byte, error) {
 	return pt, nil
 }
 
-// WrapSecret encrypts the vault symmetric secret (UTF-8 string) with the user's passphrase.
-// Stored at ~/.sigil/secret.enc.
 func WrapSecret(passphrase string, secretPlain string) ([]byte, error) {
 	if passphrase == "" {
 		return nil, errors.New("crypto: passphrase is empty")
@@ -97,7 +92,6 @@ func WrapSecret(passphrase string, secretPlain string) ([]byte, error) {
 	return seal([]byte(passphrase), []byte(secretPlain))
 }
 
-// UnwrapSecret decrypts secret.enc using the passphrase.
 func UnwrapSecret(passphrase string, blob []byte) (string, error) {
 	pt, err := open([]byte(passphrase), blob)
 	if err != nil {
@@ -106,7 +100,6 @@ func UnwrapSecret(passphrase string, blob []byte) (string, error) {
 	return string(pt), nil
 }
 
-// EncryptVault encrypts vault plaintext (e.g. .env body) with the team/shared secret string.
 func EncryptVault(secret string, plaintext []byte) ([]byte, error) {
 	if secret == "" {
 		return nil, errors.New("crypto: secret is empty")
@@ -114,7 +107,6 @@ func EncryptVault(secret string, plaintext []byte) ([]byte, error) {
 	return seal([]byte(secret), plaintext)
 }
 
-// DecryptVault decrypts a vault blob produced by EncryptVault.
 func DecryptVault(secret string, blob []byte) ([]byte, error) {
 	if secret == "" {
 		return nil, errors.New("crypto: secret is empty")

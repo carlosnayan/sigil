@@ -7,7 +7,6 @@ import (
 
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-// Generate returns a cryptographically random string of the given length using charset [a-zA-Z0-9].
 func Generate(length int) (string, error) {
 	if length <= 0 {
 		return "", fmt.Errorf("secret: length must be positive")

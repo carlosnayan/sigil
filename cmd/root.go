@@ -21,7 +21,6 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-// Execute roda o comando raiz.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
@@ -66,7 +65,6 @@ func loadProjectConfig(cmd *cobra.Command) error {
 	return nil
 }
 
-// SigilHome retorna ~/.sigil (secret.enc, vaults/, vault.yaml por omissão).
 func SigilHome() (string, error) {
 	h, err := homedir.Dir()
 	if err != nil {
@@ -75,7 +73,6 @@ func SigilHome() (string, error) {
 	return filepath.Join(h, ".sigil"), nil
 }
 
-// DefaultConfigPath retorna ~/.sigil/vault.yaml.
 func DefaultConfigPath() (string, error) {
 	dir, err := SigilHome()
 	if err != nil {
