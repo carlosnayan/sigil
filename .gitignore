@@ -6,6 +6,7 @@ dist/
 # Dados locais e secrets
 .vault/
 *.gpg
+*.enc
 .env
 
 # Go

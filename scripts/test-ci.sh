@@ -33,6 +33,20 @@ run_cmd() {
     fi
 }
 
+# Lista ficheiros .go do módulo (via go list) ainda por formatar.
+gofmt_dirty_list() {
+    local dir f
+    cd "$REPO_ROOT" || return 1
+    shopt -s nullglob
+    while IFS= read -r dir; do
+        [[ -z "$dir" || ! -d "$dir" ]] && continue
+        for f in "$dir"/*.go; do
+            gofmt -l "$f"
+        done
+    done < <(go list -f '{{.Dir}}' ./... 2>/dev/null)
+    shopt -u nullglob
+}
+
 echo "=========================================="
 echo "  Sigil CLI — local CI"
 echo "=========================================="
@@ -43,22 +57,33 @@ if ! command -v go &>/dev/null; then
     log_error "go not found in PATH"
     exit 1
 fi
+export PATH="$(go env GOPATH)/bin:${PATH}"
 log_info "Go: $(go version)"
-if ! command -v gpg &>/dev/null && ! command -v gpg2 &>/dev/null; then
-    log_warning "gpg/gpg2 not in PATH — internal/gpg tests will be skipped"
-else
-    log_info "GnuPG available (integration tests may run)"
-fi
 if ! command -v python3 &>/dev/null; then
     log_warning "python3 not found — falling back to plain go test output"
 fi
 echo ""
 
-log_info "=== Format (gofmt) ==="
-run_cmd "gofmt (no changes needed)" "
-    cd '$REPO_ROOT'
-    test -z \"\$(gofmt -l . 2>/dev/null)\"
-"
+log_info "=== Format (goimports + gofmt) ==="
+if ! command -v goimports &>/dev/null; then
+    log_warning "goimports not found; installing golang.org/x/tools/cmd/goimports@latest"
+    go install golang.org/x/tools/cmd/goimports@latest
+fi
+if ! command -v goimports &>/dev/null; then
+    log_error "goimports not on PATH after install; add $(go env GOPATH)/bin to PATH"
+    exit 1
+fi
+run_cmd "goimports -w ." "cd '$REPO_ROOT' && goimports -w ."
+run_cmd "go fmt ./..." "cd '$REPO_ROOT' && go fmt ./..."
+if dirty=$(gofmt_dirty_list); [[ -n "$dirty" ]]; then
+    log_error "gofmt: files still need formatting after go fmt:"
+    echo "$dirty"
+    FAILED_TESTS+=("gofmt verify")
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+else
+    log_success "gofmt verify (module .go files)"
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+fi
 echo ""
 
 log_info "=== Static analysis & build ==="
@@ -87,9 +112,9 @@ for line in sys.stdin:
         ms      = int(elapsed * 1000)
         if 'Test' not in d:
             if action == 'pass':
-                print(f'  \033[0;32m✓\033[0m {pkg} ({ms}ms)')
+                print(f'\033[0;32m[✓]\033[0m {pkg} ({ms}ms)')
             elif action == 'fail':
-                print(f'  \033[0;31m✗\033[0m {pkg} ({ms}ms)')
+                print(f'\033[0;31m[✗]\033[0m {pkg} ({ms}ms)')
                 failed = True
     except json.JSONDecodeError:
         print(line)
