@@ -11,8 +11,8 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:              "vault",
-	Short:            "Local secret manager — 100% offline",
+	Use:              "sigil",
+	Short:            "Sigil — local secret manager, 100% offline",
 	Long:             "Secrets, sealed with a Sigil",
 	Version:          "0.1.0",
 	TraverseChildren: true,
@@ -30,7 +30,7 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "verbose output")
-	rootCmd.PersistentFlags().String("config", "", "path to vault.yaml (default: ./vault.yaml)")
+	rootCmd.PersistentFlags().String("config", "", "path to vault.yaml (default: ~/.sigil/vault.yaml)")
 }
 
 func loadProjectConfig(cmd *cobra.Command) error {
@@ -42,7 +42,10 @@ func loadProjectConfig(cmd *cobra.Command) error {
 		return err
 	}
 	if cfgPath == "" {
-		cfgPath = filepath.Join(".", "vault.yaml")
+		cfgPath, err = DefaultConfigPath()
+		if err != nil {
+			return err
+		}
 	}
 	abs, err := filepath.Abs(cfgPath)
 	if err != nil {
@@ -63,11 +66,20 @@ func loadProjectConfig(cmd *cobra.Command) error {
 	return nil
 }
 
-// VaultHome retorna ~/.vault (criação lazy nas fases seguintes).
-func VaultHome() (string, error) {
+// SigilHome retorna ~/.sigil (secret.enc, vaults/, vault.yaml por omissão).
+func SigilHome() (string, error) {
 	h, err := homedir.Dir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(h, ".vault"), nil
+	return filepath.Join(h, ".sigil"), nil
+}
+
+// DefaultConfigPath retorna ~/.sigil/vault.yaml.
+func DefaultConfigPath() (string, error) {
+	dir, err := SigilHome()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "vault.yaml"), nil
 }

@@ -14,8 +14,8 @@ import (
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initialize a new vault in the current project",
-	Long:  "Creates ~/.vault/secret.enc (passphrase-wrapped secret), encrypted vault file, and vault.yaml.",
+	Short: "Initialize Sigil in the current project",
+	Long:  "Creates ~/.sigil/secret.enc (passphrase-wrapped secret), encrypted vault files, and ~/.sigil/vault.yaml.",
 	RunE:  runInit,
 }
 
@@ -29,7 +29,10 @@ func initConfigPath(cmd *cobra.Command) (string, error) {
 		return "", err
 	}
 	if p == "" {
-		p = filepath.Join(".", "vault.yaml")
+		p, err = DefaultConfigPath()
+		if err != nil {
+			return "", err
+		}
 	}
 	return filepath.Abs(p)
 }
@@ -40,18 +43,18 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if _, err := os.Stat(cfgPath); err == nil {
-		return fmt.Errorf("vault already initialized: %s exists", cfgPath)
+		return fmt.Errorf("sigil: project already initialized: %s exists", cfgPath)
 	} else if !os.IsNotExist(err) {
 		return err
 	}
 
-	vaultHome, err := VaultHome()
+	sigilHome, err := SigilHome()
 	if err != nil {
 		return err
 	}
-	secretEncPath := filepath.Join(vaultHome, "secret.enc")
+	secretEncPath := filepath.Join(sigilHome, "secret.enc")
 	if _, err := os.Stat(secretEncPath); err == nil {
-		return fmt.Errorf("vault user data already exists at %s (secret.enc). Remove ~/.vault to re-init or use an existing project", vaultHome)
+		return fmt.Errorf("sigil: user data already exists at %s (secret.enc). Remove ~/.sigil to re-init or use an existing project", sigilHome)
 	} else if !os.IsNotExist(err) {
 		return err
 	}
@@ -87,7 +90,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 		chosen = s
 	}
 
-	if err := os.MkdirAll(vaultHome, 0o700); err != nil {
+	if err := os.MkdirAll(sigilHome, 0o700); err != nil {
 		return err
 	}
 
@@ -99,7 +102,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	vaultsDir := filepath.Join(vaultHome, "vaults")
+	vaultsDir := filepath.Join(sigilHome, "vaults")
 	if err := os.MkdirAll(vaultsDir, 0o700); err != nil {
 		return err
 	}
@@ -134,6 +137,6 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ui.Success("Vault initialized successfully.")
+	ui.Success("Sigil initialized successfully.")
 	return nil
 }

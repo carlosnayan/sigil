@@ -12,7 +12,7 @@ var exportCmd = &cobra.Command{
 	Long:  "env or json format. Full implementation in phase 10.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		format, _ := cmd.Flags().GetString("format")
-		fmt.Printf("vault export — stub (phase 10) [format=%q]\n", format)
+		fmt.Printf("sigil export — stub (phase 10) [format=%q]\n", format)
 		return nil
 	},
 }

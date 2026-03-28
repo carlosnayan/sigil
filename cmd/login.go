@@ -9,9 +9,9 @@ import (
 var loginCmd = &cobra.Command{
 	Use:   "login",
 	Short: "Authenticate with the vault password",
-	Long:  "Unlocks the GPG agent with the vault password. Full implementation in phase 4.",
+	Long:  "Unlocks secret.enc with the passphrase and caches the team secret in memory. Full implementation in phase 4.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("vault login — stub (phase 4)")
+		fmt.Println("sigil login — stub (phase 4)")
 		return nil
 	},
 }

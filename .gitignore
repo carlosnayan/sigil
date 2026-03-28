@@ -4,7 +4,7 @@ bin/
 dist/
 
 # Dados locais e secrets
-.vault/
+.sigil/
 *.gpg
 *.enc
 .env

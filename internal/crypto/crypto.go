@@ -89,7 +89,7 @@ func open(password []byte, blob []byte) ([]byte, error) {
 }
 
 // WrapSecret encrypts the vault symmetric secret (UTF-8 string) with the user's passphrase.
-// Stored at ~/.vault/secret.enc.
+// Stored at ~/.sigil/secret.enc.
 func WrapSecret(passphrase string, secretPlain string) ([]byte, error) {
 	if passphrase == "" {
 		return nil, errors.New("crypto: passphrase is empty")

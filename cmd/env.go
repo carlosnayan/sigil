@@ -14,7 +14,7 @@ var envCmd = &cobra.Command{
 		plain, _ := cmd.Flags().GetBool("plain")
 		jsonOut, _ := cmd.Flags().GetBool("json")
 		envFlag, _ := cmd.Flags().GetString("env")
-		fmt.Printf("vault env — stub (phase 9) [plain=%v json=%v env=%q]\n", plain, jsonOut, envFlag)
+		fmt.Printf("sigil env — stub (phase 9) [plain=%v json=%v env=%q]\n", plain, jsonOut, envFlag)
 		return nil
 	},
 }

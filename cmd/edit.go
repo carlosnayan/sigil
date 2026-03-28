@@ -12,7 +12,7 @@ var editCmd = &cobra.Command{
 	Long:  "Decrypts, merges envs, opens $EDITOR, and re-encrypts. Full implementation in phase 6.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		env, _ := cmd.Flags().GetString("env")
-		fmt.Printf("vault edit — stub (phase 6) [env=%q]\n", env)
+		fmt.Printf("sigil edit — stub (phase 6) [env=%q]\n", env)
 		return nil
 	},
 }

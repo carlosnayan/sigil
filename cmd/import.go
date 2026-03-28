@@ -12,7 +12,7 @@ var importCmd = &cobra.Command{
 	Long:  "Reads a file and updates vaults. Full implementation in phase 10.",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Printf("vault import — stub (phase 10) [file=%q]\n", args[0])
+		fmt.Printf("sigil import — stub (phase 10) [file=%q]\n", args[0])
 		return nil
 	},
 }
