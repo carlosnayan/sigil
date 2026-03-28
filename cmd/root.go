@@ -12,8 +12,8 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:              "sigil",
-	Short:            "Sigil — local secret manager, 100% offline",
-	Long:             "Secrets, sealed with a Sigil",
+	Short:            "Sigil — encrypt environment files offline",
+	Long:             "Environment files, sealed with a Sigil",
 	Version:          "0.1.0",
 	TraverseChildren: true,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {

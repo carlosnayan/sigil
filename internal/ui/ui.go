@@ -70,12 +70,38 @@ func PromptSelect(label string, items []string) (int, string, error) {
 }
 
 var VaultMenuItems = []string{
-	"Manage secrets",
+	"Manage configs",
 	"Import .env file",
 	"Export .env file",
 	"Rekey / Change passphrase",
 	"Doctor / Status",
 	"Exit",
+}
+
+func promptSelectItems(items []string) *promptui.Select {
+	return &promptui.Select{
+		Label:    "",
+		Items:    items,
+		Size:     len(items),
+		HideHelp: true,
+		Templates: &promptui.SelectTemplates{
+			Label:    "{{if false}}{{end}}",
+			Active:   "❯ {{ . | cyan }}",
+			Inactive: "  {{ . }}",
+			Selected: "❯ {{ . | green }}",
+		},
+	}
+}
+
+func SelectList(header string, items []string) (int, string, error) {
+	bold := color.New(color.Bold)
+	fmt.Fprintln(os.Stdout)
+	if header != "" {
+		fmt.Fprintln(os.Stdout, bold.Sprint(header))
+		fmt.Fprintln(os.Stdout)
+	}
+	sel := promptSelectItems(items)
+	return sel.Run()
 }
 
 func VaultMenu(unlocked bool) (int, string, error) {
@@ -88,19 +114,15 @@ func VaultMenu(unlocked bool) (int, string, error) {
 	fmt.Fprintln(os.Stdout, bold.Sprint("SIGIL — Vault Menu"))
 	fmt.Fprintf(os.Stdout, "Status: %s\n", status)
 
-	sel := promptui.Select{
-		Label:    "",
-		Items:    VaultMenuItems,
-		Size:     len(VaultMenuItems),
-		HideHelp: true,
-		Templates: &promptui.SelectTemplates{
-			Label:    "{{if false}}{{end}}",
-			Active:   "❯ {{ . | cyan }}",
-			Inactive: "  {{ . }}",
-			Selected: "❯ {{ . | green }}",
-		},
-	}
+	sel := promptSelectItems(VaultMenuItems)
 	return sel.Run()
+}
+
+func PromptText(label string) (string, error) {
+	p := promptui.Prompt{
+		Label: label,
+	}
+	return p.Run()
 }
 
 func Confirm(label string, defaultYes bool) (bool, error) {

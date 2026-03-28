@@ -15,8 +15,10 @@ import (
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize Sigil in the current project",
-	Long:  "Creates ~/.sigil/secret.enc (passphrase-wrapped secret), encrypted vault files, and ~/.sigil/vault.yaml.",
-	RunE:  runInit,
+	Long: `Creates ~/.sigil/secret.enc (vault password protects your encryption key),
+~/.sigil/vault.yaml, and an empty vaults directory. No .enc config files are created;
+add them after login via Manage configs.`,
+	RunE: runInit,
 }
 
 func init() {
@@ -52,25 +54,25 @@ func runInit(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	secretEncPath := filepath.Join(sigilHome, "secret.enc")
-	if _, err := os.Stat(secretEncPath); err == nil {
+	keyStorePath := filepath.Join(sigilHome, "secret.enc")
+	if _, err := os.Stat(keyStorePath); err == nil {
 		return fmt.Errorf("sigil: user data already exists at %s (secret.enc). Remove ~/.sigil to re-init or use an existing project", sigilHome)
 	} else if !os.IsNotExist(err) {
 		return err
 	}
 
-	password, err := initPromptConfirmPassword("Enter vault password:", "Confirm vault password:")
+	vaultPassword, err := initPromptConfirmPassword("Enter vault password:", "Confirm vault password:")
 	if err != nil {
 		return err
 	}
 
-	autoSecret, err := secret.Generate(32)
+	autoKey, err := initGenerateKey(32)
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("Your auto-generated secret (encrypts vault files; share with teammates for the same .env.enc):")
-	fmt.Println(autoSecret)
+	fmt.Println(autoKey)
 	fmt.Println()
 
 	useAuto, err := initConfirm("Use this generated secret?", true)
@@ -78,14 +80,14 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	chosen := autoSecret
+	chosen := autoKey
 	if !useAuto {
 		s, err := initPromptPassword("Enter your secret")
 		if err != nil {
 			return err
 		}
 		if s == "" {
-			return fmt.Errorf("secret cannot be empty")
+			return fmt.Errorf("encryption key cannot be empty")
 		}
 		chosen = s
 	}
@@ -94,27 +96,16 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	wrapped, err := crypto.WrapSecret(password, chosen)
+	wrapped, err := crypto.WrapSecret(vaultPassword, chosen)
 	if err != nil {
-		return fmt.Errorf("wrap secret: %w", err)
+		return fmt.Errorf("wrap encryption key: %w", err)
 	}
-	if err := os.WriteFile(secretEncPath, wrapped, 0o600); err != nil {
+	if err := os.WriteFile(keyStorePath, wrapped, 0o600); err != nil {
 		return err
 	}
 
 	vaultsDir := filepath.Join(sigilHome, "vaults")
 	if err := os.MkdirAll(vaultsDir, 0o700); err != nil {
-		return err
-	}
-
-	starter := []byte("# Add KEY=value lines below.\n")
-	vaultCipher, err := crypto.EncryptVault(chosen, starter)
-	if err != nil {
-		return fmt.Errorf("encrypt vault: %w", err)
-	}
-
-	outFile := filepath.Join(vaultsDir, "default.dev.env.enc")
-	if err := os.WriteFile(outFile, vaultCipher, 0o600); err != nil {
 		return err
 	}
 
@@ -127,10 +118,11 @@ func runInit(cmd *cobra.Command, args []string) error {
 		proj = "my-project"
 	}
 
+	defaultEnv := "dev"
 	c := &config.Config{
 		Project: proj,
-		Env:     "dev",
-		Vaults:  []string{"default"},
+		Env:     defaultEnv,
+		Vaults:  []string{},
 		Inject:  map[string]string{},
 	}
 	if err := config.Save(cfgPath, c); err != nil {
@@ -145,4 +137,5 @@ var (
 	initPromptConfirmPassword = ui.PromptConfirmPassword
 	initConfirm               = ui.Confirm
 	initPromptPassword        = ui.PromptPassword
+	initGenerateKey           = secret.Generate
 )

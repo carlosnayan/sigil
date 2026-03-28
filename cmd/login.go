@@ -16,7 +16,7 @@ var loginCmd = &cobra.Command{
 	Use:   "login",
 	Short: "Authenticate and open the interactive vault menu",
 	Long: `Unlocks ~/.sigil/secret.enc with your vault password, then opens an interactive
-menu (arrow keys) to manage secrets, import/export, rekey, and diagnostics.`,
+menu (arrow keys) to manage configs, import/export, rekey, and diagnostics.`,
 	RunE: runLogin,
 }
 
@@ -50,12 +50,12 @@ func runLogin(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("sigil: password cannot be empty")
 	}
 
-	teamSecret, err := crypto.UnwrapSecret(password, blob)
+	encryptionKey, err := crypto.UnwrapSecret(password, blob)
 	if err != nil {
 		if errors.Is(err, crypto.ErrDecrypt) {
-			return fmt.Errorf("sigil: wrong password or corrupted secret.enc")
+			return fmt.Errorf("sigil: wrong password or corrupted key store (secret.enc)")
 		}
-		return fmt.Errorf("sigil: unlock vault: %w", err)
+		return fmt.Errorf("sigil: unlock key store: %w", err)
 	}
 
 	for {
@@ -69,10 +69,14 @@ func runLogin(cmd *cobra.Command, args []string) error {
 		}
 
 		switch idx {
-		case 0, 1, 2, 3, 4:
-			menuStub(ui.VaultMenuItems[idx], teamSecret)
-		case 5: // Exit
-			ui.Success("Session closed. Secret cleared from memory.")
+		case 0:
+			if err := runManageSecrets(sigilHome, encryptionKey); err != nil {
+				return err
+			}
+		case 1, 2, 3, 4:
+			menuStub(ui.VaultMenuItems[idx], encryptionKey)
+		case 5:
+			ui.Success("Session closed. Encryption key cleared from memory.")
 			return nil
 		default:
 			ui.Warn("Unknown menu option")
@@ -80,8 +84,8 @@ func runLogin(cmd *cobra.Command, args []string) error {
 	}
 }
 
-func menuStub(action string, teamSecret string) {
-	_ = teamSecret // reserved for decrypt/rekey flows in later phases
+func menuStub(action string, encryptionKey string) {
+	_ = encryptionKey
 	ui.Warn(action + " — not implemented yet")
 }
 
