@@ -9,3 +9,6 @@ build:
 
 run: build
 	./$(BIN) $(ARGS)
+
+test:
+	./scripts/test-ci.sh
