@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Project string            `yaml:"project"`
 	Env     string            `yaml:"env"`
+	Secret  string            `yaml:"secret"`
 	Vaults  []string          `yaml:"vaults"`
 	Inject  map[string]string `yaml:"inject"`
 }

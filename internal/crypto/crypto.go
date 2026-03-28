@@ -85,21 +85,6 @@ func open(password []byte, blob []byte) ([]byte, error) {
 	return pt, nil
 }
 
-func WrapSecret(passphrase string, secretPlain string) ([]byte, error) {
-	if passphrase == "" {
-		return nil, errors.New("crypto: passphrase is empty")
-	}
-	return seal([]byte(passphrase), []byte(secretPlain))
-}
-
-func UnwrapSecret(passphrase string, blob []byte) (string, error) {
-	pt, err := open([]byte(passphrase), blob)
-	if err != nil {
-		return "", err
-	}
-	return string(pt), nil
-}
-
 func EncryptVault(secret string, plaintext []byte) ([]byte, error) {
 	if secret == "" {
 		return nil, errors.New("crypto: secret is empty")

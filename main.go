@@ -6,6 +6,7 @@ import (
 	_ "github.com/carlos/sigil/internal/config"
 	_ "github.com/carlos/sigil/internal/crypto"
 	_ "github.com/carlos/sigil/internal/env"
+	_ "github.com/carlos/sigil/internal/link"
 	_ "github.com/carlos/sigil/internal/runner"
 	_ "github.com/carlos/sigil/internal/secret"
 	_ "github.com/carlos/sigil/internal/ui"

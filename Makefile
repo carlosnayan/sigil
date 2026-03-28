@@ -10,7 +10,7 @@ build:
 
 # Run the existing binary without rebuilding. Pass CLI args via ARGS, e.g.:
 #   make run ARGS=init
-#   make run ARGS='login --help'
+#   make run ARGS='config --help'
 # (Do not use "make run init" — Make treats init as a separate target.)
 run:
 	@test -f $(BIN) || (echo "$(BIN) missing — run: make build" >&2 && exit 1)
