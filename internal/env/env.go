@@ -46,3 +46,38 @@ func Serialize(env map[string]string) []byte {
 func SerializeDotEnv(env map[string]string) string {
 	return strings.TrimSuffix(string(Serialize(env)), "\n")
 }
+
+// FromSlice parses KEY=value entries (e.g. os.Environ()) into a map.
+// The first '=' separates key from value; missing '=' yields key with empty value.
+func FromSlice(environ []string) map[string]string {
+	out := make(map[string]string)
+	for _, e := range environ {
+		if e == "" {
+			continue
+		}
+		key, val, found := strings.Cut(e, "=")
+		if !found {
+			out[key] = ""
+			continue
+		}
+		out[key] = val
+	}
+	return out
+}
+
+// ToSlice converts a map to sorted KEY=value lines suitable for exec.Cmd.Env.
+func ToSlice(env map[string]string) []string {
+	if len(env) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(env))
+	for k := range env {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	out := make([]string, len(keys))
+	for i, k := range keys {
+		out[i] = k + "=" + env[k]
+	}
+	return out
+}
