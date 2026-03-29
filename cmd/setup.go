@@ -17,8 +17,9 @@ var setupCmd = &cobra.Command{
 	Use:   "setup",
 	Short: "Link a config from sigil.yaml to the current directory",
 	Long: `Reads sigil.yaml (or sigil.yml) in the current directory for setup.config,
-verifies ~/.sigil/vaults/<config>.enc exists, and records the mapping in ~/.sigil/links.yaml
+verifies ~/.sigil/vaults/<config>.enc exists, and records the mapping in vault.yaml (links)
 for use by sigil run.`,
+	Args: cobra.NoArgs,
 	RunE: runSetup,
 }
 
@@ -56,7 +57,7 @@ func findSigilManifest(dir string) (path string, err error) {
 
 var errSigilNotFound = errors.New("sigil: no sigil.yaml found in current directory")
 
-func runSetup(_ *cobra.Command, _ []string) error {
+func runSetup(cmd *cobra.Command, _ []string) error {
 	wd, err := setupGetwd()
 	if err != nil {
 		return fmt.Errorf("sigil: get working directory: %w", err)
@@ -68,9 +69,6 @@ func runSetup(_ *cobra.Command, _ []string) error {
 
 	manifest, err := findSigilManifest(cwd)
 	if err != nil {
-		if errors.Is(err, errSigilNotFound) {
-			return err
-		}
 		return err
 	}
 
@@ -105,7 +103,18 @@ func runSetup(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("sigil: stat vault config: %w", err)
 	}
 
-	if err := link.Set(sigilHome, cwd, config); err != nil {
+	cfgPath, err := configPathForCmd(cmd)
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stat(cfgPath); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("sigil: no vault.yaml at %s — run `sigil init` first", cfgPath)
+		}
+		return fmt.Errorf("sigil: vault.yaml: %w", err)
+	}
+
+	if err := link.Set(cfgPath, cwd, config); err != nil {
 		return fmt.Errorf("sigil: save link: %w", err)
 	}
 

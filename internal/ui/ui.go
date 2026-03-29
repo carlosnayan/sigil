@@ -142,7 +142,6 @@ const BackItemLabel = "← Back"
 var VaultMenuItems = []string{
 	"Add new config",
 	"Manage configs",
-	"Rekey / Change secret",
 	"Exit",
 }
 

@@ -17,7 +17,8 @@ var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Open the interactive vault menu",
 	Long: `Reads the secret from ~/.sigil/vault.yaml and opens an interactive menu
-(arrow keys) to add configs, manage configs, and rekey.`,
+(arrow keys) to add configs and manage configs.`,
+	Args: cobra.NoArgs,
 	RunE: runConfig,
 }
 
@@ -97,19 +98,12 @@ func runConfig(cmd *cobra.Command, _ []string) error {
 				return err
 			}
 		case 2:
-			menuStub(ui.VaultMenuItems[idx], encryptionKey)
-		case 3:
 			ui.Success("Session closed.")
 			return nil
 		default:
 			ui.Warn("Unknown menu option")
 		}
 	}
-}
-
-func menuStub(action string, encryptionKey string) {
-	_ = encryptionKey
-	ui.Warn(action + " — not implemented yet")
 }
 
 var configVaultMenu = ui.VaultMenu

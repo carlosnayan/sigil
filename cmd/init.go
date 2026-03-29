@@ -17,6 +17,7 @@ var initCmd = &cobra.Command{
 	Long: `Creates ~/.sigil/vault.yaml (with a generated secret for encrypting vault files),
 and an empty vaults directory. No .enc config files are created;
 add them after sigil config via Manage configs.`,
+	Args: cobra.NoArgs,
 	RunE: runInit,
 }
 
@@ -24,22 +25,8 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 }
 
-func initConfigPath(cmd *cobra.Command) (string, error) {
-	p, err := cmd.Flags().GetString("config")
-	if err != nil {
-		return "", err
-	}
-	if p == "" {
-		p, err = DefaultConfigPath()
-		if err != nil {
-			return "", err
-		}
-	}
-	return filepath.Abs(p)
-}
-
-func runInit(cmd *cobra.Command, args []string) error {
-	cfgPath, err := initConfigPath(cmd)
+func runInit(cmd *cobra.Command, _ []string) error {
+	cfgPath, err := configPathForCmd(cmd)
 	if err != nil {
 		return err
 	}

@@ -38,6 +38,32 @@ func Open(path string) (exitCode int, err error) {
 	return -1, err
 }
 
+// splitCmd splits the editor command line into argv tokens. Space-separated segments
+// are split; text inside double quotes is kept as one token (paths with spaces).
 func splitCmd(s string) []string {
-	return strings.Fields(strings.TrimSpace(s))
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+	var out []string
+	var b strings.Builder
+	inQuote := false
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch {
+		case c == '"':
+			inQuote = !inQuote
+		case (c == ' ' || c == '\t') && !inQuote:
+			if b.Len() > 0 {
+				out = append(out, b.String())
+				b.Reset()
+			}
+		default:
+			b.WriteByte(c)
+		}
+	}
+	if b.Len() > 0 {
+		out = append(out, b.String())
+	}
+	return out
 }

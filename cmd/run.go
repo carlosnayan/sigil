@@ -46,8 +46,12 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 }
 
-func resolveRunSlug(sigilHome, cwd string) (string, error) {
-	if slug, ok := link.Get(sigilHome, cwd); ok {
+func resolveRunSlug(cfgPath, cwd string) (string, error) {
+	slug, ok, err := link.Get(cfgPath, cwd)
+	if err != nil {
+		return "", fmt.Errorf("sigil run: read vault.yaml links: %w", err)
+	}
+	if ok {
 		if err := vaultstore.ValidateSlug(slug); err != nil {
 			return "", fmt.Errorf("sigil run: invalid linked config slug: %w", err)
 		}
@@ -121,7 +125,7 @@ func runRun(cmd *cobra.Command, args []string) (int, error) {
 		return 0, fmt.Errorf("sigil run: resolve working directory: %w", err)
 	}
 
-	slug, err := resolveRunSlug(sigilHome, cwd)
+	slug, err := resolveRunSlug(cfgPath, cwd)
 	if err != nil {
 		return 0, err
 	}

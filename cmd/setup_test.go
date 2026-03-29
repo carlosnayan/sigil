@@ -105,6 +105,10 @@ func TestRunSetup_happyPath_sigilYml(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(vaultsDir, "prod.enc"), []byte("x"), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	vaultYAML := "project: test\nenv: dev\nsecret: test-secret\nvaults: []\ninject: {}\n"
+	if err := os.WriteFile(filepath.Join(sigilDir, "vault.yaml"), []byte(vaultYAML), 0o600); err != nil {
+		t.Fatal(err)
+	}
 
 	proj := t.TempDir()
 	manifest := "setup:\n  config: prod\n"
@@ -126,7 +130,11 @@ func TestRunSetup_happyPath_sigilYml(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	slug, ok := link.Get(sigilDir, projAbs)
+	cfgPath := filepath.Join(sigilDir, "vault.yaml")
+	slug, ok, err := link.Get(cfgPath, projAbs)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !ok || slug != "prod" {
 		t.Fatalf("link Get: %q %v", slug, ok)
 	}

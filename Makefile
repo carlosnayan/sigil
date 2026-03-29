@@ -17,5 +17,5 @@ run:
 	./$(BIN) $(ARGS)
 
 test:
-	./scripts/test-ci.sh
+	./scripts/run-ci.sh
 

@@ -191,7 +191,7 @@ func TestRunCmd_viaLinksYaml(t *testing.T) {
 	_ = os.WriteFile(vaultstore.EncPath(sigilHome, "staging"), enc, 0o600)
 
 	projectDir := t.TempDir()
-	if err := link.Set(sigilHome, projectDir, "staging"); err != nil {
+	if err := link.Set(cfgPath, projectDir, "staging"); err != nil {
 		t.Fatal(err)
 	}
 

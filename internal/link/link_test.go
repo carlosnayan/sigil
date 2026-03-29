@@ -6,80 +6,74 @@ import (
 	"testing"
 )
 
-func TestLoad_missingFile(t *testing.T) {
-	dir := t.TempDir()
-	m, err := Load(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(m) != 0 {
-		t.Fatalf("want empty map, got %v", m)
+func minimalVaultYAML(secret string) []byte {
+	return []byte(`project: test
+env: dev
+secret: ` + secret + `
+vaults: []
+inject: {}
+`)
+}
+
+func TestGet_missingVaultYAML(t *testing.T) {
+	cfgPath := filepath.Join(t.TempDir(), "vault.yaml")
+	_, _, err := Get(cfgPath, "/tmp/foo")
+	if err == nil {
+		t.Fatal("expected error when vault.yaml missing")
 	}
 }
 
 func TestSet_Get_Remove(t *testing.T) {
-	home := t.TempDir()
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, "vault.yaml")
+	if err := os.WriteFile(cfgPath, minimalVaultYAML("s"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
 	dirA := "/tmp/proj-a"
 	dirB := "/tmp/proj-b"
 
-	if err := Set(home, dirA, "dev"); err != nil {
+	if err := Set(cfgPath, dirA, "dev"); err != nil {
 		t.Fatal(err)
 	}
-	if err := Set(home, dirB, "prod"); err != nil {
+	if err := Set(cfgPath, dirB, "prod"); err != nil {
 		t.Fatal(err)
 	}
 
-	m, err := Load(home)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if m[dirA] != "dev" || m[dirB] != "prod" {
-		t.Fatalf("Load: %v", m)
-	}
-	s, ok := Get(home, dirA)
-	if !ok || s != "dev" {
-		t.Fatalf("Get dirA: %q %v", s, ok)
+	s, ok, err := Get(cfgPath, dirA)
+	if err != nil || !ok || s != "dev" {
+		t.Fatalf("Get dirA: %q %v err=%v", s, ok, err)
 	}
 
-	if err := Set(home, dirA, "staging"); err != nil {
+	if err := Set(cfgPath, dirA, "staging"); err != nil {
 		t.Fatal(err)
 	}
-	s, _ = Get(home, dirA)
-	if s != "staging" {
-		t.Fatalf("after update want staging, got %q", s)
+	s, ok, err = Get(cfgPath, dirA)
+	if err != nil || !ok || s != "staging" {
+		t.Fatalf("after update: %q %v", s, ok)
 	}
 
-	if err := Remove(home, dirA); err != nil {
+	if err := Remove(cfgPath, dirA); err != nil {
 		t.Fatal(err)
 	}
-	_, ok = Get(home, dirA)
-	if ok {
-		t.Fatal("expected dirA removed")
+	_, ok, err = Get(cfgPath, dirA)
+	if err != nil || ok {
+		t.Fatalf("expected dirA removed, ok=%v err=%v", ok, err)
 	}
-	s, ok = Get(home, dirB)
-	if !ok || s != "prod" {
-		t.Fatalf("dirB: %q %v", s, ok)
+	s, ok, err = Get(cfgPath, dirB)
+	if err != nil || !ok || s != "prod" {
+		t.Fatalf("dirB: %q %v err=%v", s, ok, err)
 	}
 }
 
-func TestLinksFile(t *testing.T) {
-	got := LinksFile("/home/x/.sigil")
-	want := filepath.Join("/home/x/.sigil", "links.yaml")
-	if got != want {
-		t.Fatalf("LinksFile: %q want %q", got, want)
-	}
-}
-
-func TestSave_nilMap(t *testing.T) {
-	home := t.TempDir()
-	if err := Save(home, nil); err != nil {
+func TestGet_emptyLinks(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, "vault.yaml")
+	if err := os.WriteFile(cfgPath, minimalVaultYAML("x"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	data, err := os.ReadFile(LinksFile(home))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(data) == 0 {
-		t.Fatal("expected non-empty yaml for empty map")
+	_, ok, err := Get(cfgPath, "/any/path")
+	if err != nil || ok {
+		t.Fatalf("want no link, ok=%v err=%v", ok, err)
 	}
 }

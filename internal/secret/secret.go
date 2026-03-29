@@ -11,14 +11,21 @@ func Generate(length int) (string, error) {
 	if length <= 0 {
 		return "", fmt.Errorf("secret: length must be positive")
 	}
-	raw := make([]byte, length)
-	if _, err := rand.Read(raw); err != nil {
-		return "", err
-	}
 	n := len(charset)
+	threshold := 256 - (256 % n)
 	b := make([]byte, length)
 	for i := range b {
-		b[i] = charset[int(raw[i])%n]
+		for {
+			var x [1]byte
+			if _, err := rand.Read(x[:]); err != nil {
+				return "", err
+			}
+			v := int(x[0])
+			if v < threshold {
+				b[i] = charset[v%n]
+				break
+			}
+		}
 	}
 	return string(b), nil
 }

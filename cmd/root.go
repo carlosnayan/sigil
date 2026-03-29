@@ -1,13 +1,11 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var rootCmd = &cobra.Command{
@@ -16,9 +14,6 @@ var rootCmd = &cobra.Command{
 	Long:             "Environment files, sealed with a Sigil",
 	Version:          "0.1.0",
 	TraverseChildren: true,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		return loadProjectConfig(cmd)
-	},
 }
 
 func Execute() {
@@ -30,39 +25,6 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "verbose output")
 	rootCmd.PersistentFlags().String("config", "", "path to vault.yaml (default: ~/.sigil/vault.yaml)")
-}
-
-func loadProjectConfig(cmd *cobra.Command) error {
-	if cmd.Name() == "help" {
-		return nil
-	}
-	cfgPath, err := cmd.Flags().GetString("config")
-	if err != nil {
-		return err
-	}
-	if cfgPath == "" {
-		cfgPath, err = DefaultConfigPath()
-		if err != nil {
-			return err
-		}
-	}
-	abs, err := filepath.Abs(cfgPath)
-	if err != nil {
-		return err
-	}
-	if _, err := os.Stat(abs); os.IsNotExist(err) {
-		viper.Reset()
-		return nil
-	}
-	viper.SetConfigFile(abs)
-	viper.SetConfigType("yaml")
-	if err := viper.ReadInConfig(); err != nil {
-		if verbose, _ := cmd.Flags().GetBool("verbose"); verbose {
-			_, _ = fmt.Fprintf(os.Stderr, "warning: could not read %s: %v\n", abs, err)
-		}
-		return nil
-	}
-	return nil
 }
 
 func SigilHome() (string, error) {

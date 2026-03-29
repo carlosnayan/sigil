@@ -25,6 +25,27 @@ func TestResolve_editorFallback(t *testing.T) {
 	}
 }
 
+func TestSplitCmd_quotedPath(t *testing.T) {
+	got := splitCmd(`"/path/with spaces/bin" --wait`)
+	want := []string{"/path/with spaces/bin", "--wait"}
+	if len(got) != len(want) {
+		t.Fatalf("got %v want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("got %v want %v", got, want)
+		}
+	}
+}
+
+func TestSplitCmd_fieldsLikeBefore(t *testing.T) {
+	got := splitCmd("code --wait")
+	want := []string{"code", "--wait"}
+	if len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {
+		t.Fatalf("got %v want %v", got, want)
+	}
+}
+
 func TestResolve_defaultNano(t *testing.T) {
 	t.Setenv("VISUAL", "")
 	t.Setenv("EDITOR", "")
